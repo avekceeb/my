@@ -1,0 +1,11 @@
+#!/bin/bash
+
+source $(dirname ${BASH_SOURCE})/../sh/common.sh
+
+[[ $# < 2 ]] && {
+    error "Usage: tex2xml in(.tex) out.xml"
+    exit 1
+}
+
+latexml --dest="$2" "$1"
+

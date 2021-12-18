@@ -1,0 +1,11 @@
+#!/bin/bash
+for f in "$@" ; do
+    mkvmerge -i "$f" | \
+    grep -E '^Track ID.*subtitles \(SubRip/SRT\)' | \
+    while read l ; do
+        n=$(echo $l | sed -e 's/^Track ID *\([0-9]*\):.*$/\1/')
+        [[ -z $n ]] || {
+            mkvextract tracks "$f" ${n}:"${f%.mkv} - ${n}.txt"
+        }
+    done
+done

@@ -1,0 +1,38 @@
+#!/bin/bash
+
+root=$(readlink -f $(dirname ${BASH_SOURCE})/..)
+source ${root}/sh/common.sh
+
+[[ $# < 1 ]] && {
+    error "Usage: [--param=value] latexml2fb2 in.xml [out.fb2]"
+    exit 1
+}
+
+params=
+
+while :; do
+    case "$1" in
+        --*=*)
+            IFS='=' read -r a b <<< "${1##--}"
+            params="$params --stringparam $a $b"
+            shift
+            ;;
+        --*)
+            shift
+            ;;
+        *)
+            break
+            ;;
+    esac
+
+done
+
+in="$1"
+out="$2"
+
+[[ -z $out ]] && {
+    out=${1%\.xml}.fb2
+}
+
+xsltproc $params ${root}/xsl/latex-to-fb2.xsl "$in" > "$out"
+

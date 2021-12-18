@@ -1,0 +1,13 @@
+#!/bin/bash
+
+for path in $@ ; do
+    [[ -f $path ]] && {
+        python3 -m json.tool $path > ${path%\.json}-pretty.json
+    }
+    [[ -d $path ]] && {
+        for f in ${path}/*.json ; do
+            python3 -m json.tool $f > ${f%\.json}-pretty.json
+        done
+    }
+done
+

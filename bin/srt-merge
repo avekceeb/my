@@ -1,0 +1,127 @@
+#!/usr/bin/python3
+
+from re import compile as recompile
+from sys import argv
+
+
+html = '''<!DOCTYPE html>
+<html lang="ru" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title>sous-titres</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"></meta>
+    <style>
+        body {{font-family:monospace; font-size:12px;}}
+        table {{width:90%; margin:auto;}}
+        thead {{color:#606060;}}
+        tbody {{color:#808080;}}
+        .first {{font-size:8px;}}
+        .second {{padding:5px 10px; font-size:12px; font-weight:bold;}}
+        .third {{font-size:12px;}}
+        tr:nth-child(1n) {{color:#4c4cb7;}}
+        tr:nth-child(2n) {{color:#d70202;}}
+        tr:nth-child(3n) {{color:#009300;}}
+        tr:nth-child(4n) {{color:#db0edb;}}
+        tr:nth-child(5n) {{color:#10bbbb;}}
+        tr:nth-child(6n) {{color:#e99906;}}
+        tr:nth-child(7n) {{color:#0f6fff;}}
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+        </thead>
+        <tbody>
+            {content}
+        </tbody>
+    </table>
+</body>
+</html>'''
+
+
+time_interval_re = recompile(
+    r'^(?P<H1>\d\d):'
+    r'(?P<M1>\d\d):'
+    r'(?P<S1>\d\d),'
+    r'(?P<ms1>\d\d\d)'
+    r' +--> +'
+    r'(?P<H2>\d\d):'
+    r'(?P<M2>\d\d):'
+    r'(?P<S2>\d\d),'
+    r'(?P<ms2>\d\d\d)$')
+
+
+START = 0
+END = 1
+TEXT = 2
+
+
+def ms_to_ts(ms):
+    ms //= 1000
+    h = ms // 3600
+    ms %= 3600
+    m = ms // 60
+    ms %= 60
+    return '{:02d}:{:02d}:{:02d}'.format(h, m, ms)
+
+
+def parse_time_interval(line):
+    m = time_interval_re.match(line)
+    if not m:
+        return None, None
+    d = m.groupdict()
+    return (
+        int(d['ms1']) +
+        int(d['S1'])*1000 +
+        int(d['M1'])*60000 +
+        int(d['H1'])*3600000,
+        int(d['ms2']) +
+        int(d['S2'])*1000 +
+        int(d['M2'])*60000 +
+        int(d['H2'])*3600000
+        )
+
+
+def parse_srt_file(filepath):
+    soustitres = list()
+    with open(filepath, 'r') as f:
+        line = f.readline()
+        while line:
+            start, end = parse_time_interval(line)
+            if start is not None:
+                text = ''
+                line_text = f.readline()
+                while line_text and line_text.strip():
+                    text += line_text
+                    line_text = f.readline()
+                soustitres.append((start, end, text.strip()))
+            line = f.readline()
+    return soustitres
+
+
+srt1 = parse_srt_file(argv[1])
+srt2 = parse_srt_file(argv[2])
+
+lines = list()
+
+while srt1:
+    s1 = srt1.pop(0)
+    trans = list() 
+    while srt2 and srt2[0][END] < s1[START]:
+        trans.append(srt2.pop(0)[TEXT])
+    while srt2 and srt2[0][END] <= s1[END]:
+        trans.append(srt2.pop(0)[TEXT])
+    lines.append((s1[TEXT], ' '.join(trans), ms_to_ts(s1[START])))
+
+result = html.format(content='\n'.join([
+    f'''<tr>
+    <td class="first">{x[2]}</td>
+    <td class="second">{x[0]}</td>
+    <td class="third">{x[1]}</td>
+</tr>''' for x in lines]))
+
+if len(argv) > 3:
+    with open(argv[3], 'w') as f:
+        f.write(result)
+else:
+    print(result)
+
