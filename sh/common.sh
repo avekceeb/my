@@ -1,6 +1,4 @@
 
-what=${what:-default}
-
 error() { echo -e "\e[31m$@\e[0m"; exit 1; }
 ok()    { echo -e "\e[32m$@\e[0m"; }
 warn()  { echo -e "\e[33m$@\e[0m"; }
@@ -82,10 +80,4 @@ cut_mp3() {
         -metadata title="new title" -ss 00:00 -to 22:57 \
         "$new"
 }
-
-#[~]$ blkid
-#/dev/sda5: UUID="764c78c6-eda7-4fff-ac80-de9b5a023466" TYPE="ext4" PARTUUID="b02f4eed-05"
-#[~]$ df -h /dev/sda5
-#Filesystem      Size  Used Avail Use% Mounted on
-#/dev/sda5       292G  270G  7.8G  98% /
 
